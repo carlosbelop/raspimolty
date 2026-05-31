@@ -99,8 +99,11 @@ class MoltbookClient:
     def get_comments(self, post_id: str, sort: str = "new") -> dict:
         return self._get(f"/posts/{post_id}/comments", params={"sort": sort})
 
-    def create_post(self, submolt: str, title: str, content: str) -> dict:
-        return self._post("/posts", {"submolt_name": submolt, "title": title, "content": content})
+    def create_post(self, submolt: str, title: str, content: str, url: str = None, type: str = "text") -> dict:
+        body = {"submolt_name": submolt, "title": title, "content": content, "type": type}
+        if url:
+            body["url"] = url
+        return self._post("/posts", body)
 
     def create_comment(self, post_id: str, content: str, parent_id: str = None) -> dict:
         body = {"content": content}
@@ -448,6 +451,76 @@ def cmd_post(mb: MoltbookClient, llm: LocalLLM, state: dict, topic: str):
         save_state(state)
 
 
+# Curated images related to AI model compression and edge inference
+COMPRESSION_IMAGES = [
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/1/10/2012_Raspberry_Pi_--_back_of_Model_B.jpg/640px-2012_Raspberry_Pi_--_back_of_Model_B.jpg",
+    "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=800",  # neural network
+    "https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=800",  # AI abstract
+    "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800",  # circuit board / edge hardware
+    "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=800",  # data center / servers
+]
+
+
+def cmd_post_image(mb: MoltbookClient, llm: LocalLLM, state: dict, image_url: str = None):
+    """Post an image about AI model compression with a positive generated caption."""
+    import random
+    if not image_url:
+        image_url = random.choice(COMPRESSION_IMAGES)
+        log.info(f"Using curated image: {image_url}")
+
+    log.info("Fetching image for analysis...")
+    data_uri = llm.fetch_image_as_datauri(image_url)
+
+    if data_uri:
+        log.info("Analyzing image with Qwen2-VL...")
+        vision_prompt = (
+            "Describe what you see in this image in one sentence, "
+            "then connect it to AI model compression, edge inference, or efficient AI. "
+            "Be enthusiastic and positive. Plain text only."
+        )
+        messages = [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": vision_prompt},
+                    {"type": "image_url", "image_url": {"url": data_uri}},
+                ],
+            },
+        ]
+        image_analysis = llm.chat(messages, max_tokens=150, temperature=0.7)
+    else:
+        log.warning("Could not fetch image, generating post without visual analysis")
+        image_analysis = None
+
+    topic_context = image_analysis or "AI model compression and efficient edge inference"
+    title_prompt = (
+        f"Based on this context: \"{topic_context}\"\n"
+        "Write a short, upbeat Moltbook post title (max 100 chars) about AI compression, "
+        "efficient AI, or running models on edge devices. Be positive and inspiring. "
+        "Return ONLY the title, no quotes."
+    )
+    title = llm.chat(build_messages(title_prompt), max_tokens=50, temperature=0.8)
+    if not title:
+        title = "AI compression is making edge inference possible for everyone!"
+    title = title.strip().strip('"')[:100]
+
+    content = image_analysis or (
+        "Compressed AI models are transforming what's possible on edge devices. "
+        "Less compute, same intelligence — that's the future Multiverse Computing is building."
+    )
+
+    log.info(f"Title: {title}")
+    log.info(f"Content: {content}")
+    log.info(f"Image URL: {image_url}")
+
+    result = mb.create_post("general", title, content, url=image_url, type="image")
+    if handle_verification(mb, llm, result):
+        log.info("Image post published!")
+        state["last_post_time"] = time.time()
+        save_state(state)
+
+
 def cmd_comment(mb: MoltbookClient, llm: LocalLLM, post_id: str, text: str):
     """Post a comment on a specific post (raw text, no LLM generation)."""
     log.info(f"Commenting on post {post_id}")
@@ -520,6 +593,8 @@ examples:
     parser.add_argument("--interval", type=int, default=1800, help="Loop interval in seconds (default: 1800)")
     parser.add_argument("--llm-url", default=LLM_BASE, help="Local LLM base URL")
     parser.add_argument("--post", metavar="TOPIC", help="Generate and publish a post about TOPIC")
+    parser.add_argument("--post-image", metavar="IMAGE_URL", nargs="?", const="",
+                        help="Publish an image post about AI compression (omit URL to pick from curated list)")
     parser.add_argument("--comment", nargs=2, metavar=("POST_ID", "TEXT"), help="Post a comment on POST_ID")
     parser.add_argument("--engage", action="store_true", help="Read feed and comment on up to 3 posts now")
     args = parser.parse_args()
@@ -531,6 +606,8 @@ examples:
 
     if args.post:
         cmd_post(mb, llm, state, args.post)
+    elif args.post_image is not None:
+        cmd_post_image(mb, llm, state, args.post_image or None)
     elif args.comment:
         cmd_comment(mb, llm, args.comment[0], args.comment[1])
     elif args.engage:
