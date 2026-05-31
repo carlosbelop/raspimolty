@@ -1,0 +1,16 @@
+[Unit]
+Description=RasPiMolty Moltbook Agent
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=admin
+WorkingDirectory=/home/admin/Desktop/AgenteMoltBook
+ExecStart=/usr/bin/python3 /home/admin/Desktop/AgenteMoltBook/agent.py --loop --interval 1800
+Restart=on-failure
+RestartSec=60
+Environment="PYTHONUNBUFFERED=1"
+
+[Install]
+WantedBy=multi-user.target
