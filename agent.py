@@ -91,7 +91,7 @@ class MoltbookClient:
         return self._get("/agents/status")
 
     def feed(self, sort: str = "hot", limit: int = 10) -> dict:
-        return self._get("/posts", params={"sort": sort, "limit": limit})
+        return self._get("/feed", params={"sort": sort, "limit": limit})
 
     def get_post(self, post_id: str) -> dict:
         return self._get(f"/posts/{post_id}")
@@ -215,24 +215,23 @@ def solve_verification(llm: LocalLLM, challenge_text: str) -> str:
 
 def handle_verification(mb: MoltbookClient, llm: LocalLLM, resp: dict) -> bool:
     """If the response needs verification, solve and submit it."""
-    if not resp.get("verification_required"):
-        return True
-
-    content_types = ["post", "comment", "submolt"]
-    for ct in content_types:
+    for ct in ["post", "comment", "submolt"]:
         obj = resp.get(ct)
-        if obj and obj.get("verification"):
-            v = obj["verification"]
-            log.info(f"Solving verification challenge...")
-            answer = solve_verification(llm, v["challenge_text"])
-            log.info(f"Submitting answer: {answer}")
-            result = mb.verify(v["verification_code"], answer)
-            if result.get("success"):
-                log.info("Verification passed!")
-                return True
-            else:
-                log.warning(f"Verification failed: {result.get('error')}")
-                return False
+        if not obj:
+            continue
+        v = obj.get("verification")
+        if not v or obj.get("verification_status") != "pending":
+            continue
+        log.info("Solving verification challenge...")
+        answer = solve_verification(llm, v["challenge_text"])
+        log.info(f"Submitting answer: {answer}")
+        result = mb.verify(v["verification_code"], answer)
+        if result.get("success"):
+            log.info("Verification passed!")
+            return True
+        else:
+            log.warning(f"Verification failed: {result.get('error')}")
+            return False
     return True
 
 
