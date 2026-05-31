@@ -343,7 +343,7 @@ def heartbeat(mb: MoltbookClient, llm: LocalLLM, state: dict):
                 ctx = (
                     f"Post: \"{activity['post_title']}\"\n"
                     f"{author} commented: \"{content}\"\n"
-                    f"Write a brief, friendly reply as RasPiMolty."
+                    f"Write a brief, friendly reply as MultiverseAgentOnRaspberry."
                 )
                 reply_text = generate_reply(llm, ctx)
                 if reply_text:
@@ -381,7 +381,7 @@ def heartbeat(mb: MoltbookClient, llm: LocalLLM, state: dict):
             ctx = (
                 f"Post by {author}: \"{title}\"\n"
                 + (f"Content: \"{preview}\"\n" if preview else "")
-                + "Write a short, genuine comment as RasPiMolty. Be curious or insightful."
+                + "Write a short, genuine comment as MultiverseAgentOnRaspberry. Be curious or insightful."
             )
             comment_text = generate_reply(llm, ctx, image_url=image_url)
             if comment_text:
@@ -418,15 +418,111 @@ def heartbeat(mb: MoltbookClient, llm: LocalLLM, state: dict):
     log.info("─── Heartbeat done ───")
 
 
+# ── Manual actions ─────────────────────────────────────────────────────────────
+
+def cmd_post(mb: MoltbookClient, llm: LocalLLM, state: dict, topic: str):
+    """Generate and publish a post about a given topic."""
+    log.info(f"Generating post about: {topic}")
+    prompt = (
+        f"Write a Moltbook post about: \"{topic}\". "
+        "Reply with JSON: {\"title\": \"...\", \"content\": \"...\"} "
+        "Title max 100 chars, content max 300 chars. Plain text, no markdown."
+    )
+    resp = llm.chat(build_messages(prompt), max_tokens=250, temperature=0.8)
+    if not resp:
+        log.error("LLM returned no response")
+        return
+    try:
+        match = re.search(r"\{.*\}", resp, re.DOTALL)
+        data = json.loads(match.group()) if match else {}
+        title = data.get("title", topic[:100])
+        content = data.get("content", "")
+    except Exception:
+        title, content = topic[:100], resp[:300]
+
+    log.info(f"Title: {title}")
+    log.info(f"Content: {content}")
+    result = mb.create_post("general", title, content)
+    if handle_verification(mb, llm, result):
+        log.info("Post published!")
+        state["last_post_time"] = time.time()
+        save_state(state)
+
+
+def cmd_comment(mb: MoltbookClient, llm: LocalLLM, post_id: str, text: str):
+    """Post a comment on a specific post (raw text, no LLM generation)."""
+    log.info(f"Commenting on post {post_id}")
+    result = mb.create_comment(post_id, text)
+    if handle_verification(mb, llm, result):
+        log.info("Comment published!")
+
+
+def cmd_engage(mb: MoltbookClient, llm: LocalLLM, state: dict):
+    """Read the feed right now and comment on up to 3 posts, ignoring the timer."""
+    log.info("─── Manual engage ───")
+    replied_posts = set(state.get("replied_posts", []))
+    feed = mb.feed(sort="hot", limit=10)
+    engaged = 0
+    for post in feed.get("posts", []):
+        if engaged >= 3:
+            break
+        pid = post.get("id") or post.get("post_id")
+        if not pid or pid in replied_posts:
+            continue
+        title = post.get("title", "")
+        preview = post.get("content", "")[:200]
+        author = post.get("author", {}).get("name", "unknown")
+        image_url = post.get("image_url") or post.get("url") if post.get("type") == "image" else None
+
+        try:
+            mb.upvote_post(pid)
+        except Exception:
+            pass
+
+        ctx = (
+            f"Post by {author}: \"{title}\"\n"
+            + (f"Content: \"{preview}\"\n" if preview else "")
+            + "Write a short, genuine comment as MultiverseAgentOnRaspberry. Be curious or insightful."
+        )
+        comment_text = generate_reply(llm, ctx, image_url=image_url)
+        if comment_text:
+            try:
+                resp = mb.create_comment(pid, comment_text)
+                if handle_verification(mb, llm, resp):
+                    log.info(f"Commented on '{title[:60]}'")
+                    replied_posts.add(pid)
+                    engaged += 1
+            except Exception as e:
+                log.warning(f"Could not comment: {e}")
+            time.sleep(21)
+
+    state["replied_posts"] = list(replied_posts)[-200:]
+    save_state(state)
+    log.info(f"─── Engaged with {engaged} post(s) ───")
+
+
 # ── Entrypoint ────────────────────────────────────────────────────────────────
 
 def main():
     import argparse
-    parser = argparse.ArgumentParser(description="RasPiMolty Moltbook agent")
+    parser = argparse.ArgumentParser(
+        description="MultiverseAgentOnRaspberry — Moltbook agent",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+examples:
+  python3 agent.py                            # one heartbeat and exit
+  python3 agent.py --loop                     # run every 30 min
+  python3 agent.py --post "quantum compression on edge devices"
+  python3 agent.py --comment POST_ID "Great insight!"
+  python3 agent.py --engage                   # read feed and comment now
+        """,
+    )
     parser.add_argument("--loop", action="store_true", help="Run continuously every 30 minutes")
     parser.add_argument("--interval", type=int, default=1800, help="Loop interval in seconds (default: 1800)")
-    parser.add_argument("--once", action="store_true", help="Run one heartbeat and exit (default)")
     parser.add_argument("--llm-url", default=LLM_BASE, help="Local LLM base URL")
+    parser.add_argument("--post", metavar="TOPIC", help="Generate and publish a post about TOPIC")
+    parser.add_argument("--comment", nargs=2, metavar=("POST_ID", "TEXT"), help="Post a comment on POST_ID")
+    parser.add_argument("--engage", action="store_true", help="Read feed and comment on up to 3 posts now")
     args = parser.parse_args()
 
     api_key = load_api_key()
@@ -434,7 +530,13 @@ def main():
     llm = LocalLLM(args.llm_url)
     state = load_state()
 
-    if args.loop:
+    if args.post:
+        cmd_post(mb, llm, state, args.post)
+    elif args.comment:
+        cmd_comment(mb, llm, args.comment[0], args.comment[1])
+    elif args.engage:
+        cmd_engage(mb, llm, state)
+    elif args.loop:
         log.info(f"Starting loop mode (interval={args.interval}s)")
         while True:
             try:
