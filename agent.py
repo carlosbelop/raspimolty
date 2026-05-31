@@ -150,11 +150,17 @@ class LocalLLM:
             "temperature": temperature,
             "stream": False,
         }
+        has_image = any(
+            isinstance(m.get("content"), list) and
+            any(c.get("type") == "image_url" for c in m["content"])
+            for m in messages
+        )
+        timeout = 300 if has_image else 120
         try:
             r = requests.post(
                 f"{self.base_url}/chat/completions",
                 json=payload,
-                timeout=120,
+                timeout=timeout,
             )
             r.raise_for_status()
             return r.json()["choices"][0]["message"]["content"].strip()
@@ -175,14 +181,26 @@ class LocalLLM:
         ]
         return self.chat(messages, max_tokens=max_tokens, temperature=0.7)
 
-    def fetch_image_as_datauri(self, url: str) -> Optional[str]:
-        """Download an image and convert to base64 data URI."""
+    def fetch_image_as_datauri(self, url: str, max_width: int = 224) -> Optional[str]:
+        """Download an image, resize to max_width px wide, return as base64 JPEG data URI."""
         try:
             r = requests.get(url, timeout=10)
             r.raise_for_status()
-            ct = r.headers.get("content-type", "image/jpeg")
-            b64 = base64.b64encode(r.content).decode()
-            return f"data:{ct};base64,{b64}"
+            try:
+                from PIL import Image
+                import io
+                img = Image.open(io.BytesIO(r.content)).convert("RGB")
+                if img.width > max_width:
+                    ratio = max_width / img.width
+                    img = img.resize((max_width, int(img.height * ratio)), Image.LANCZOS)
+                buf = io.BytesIO()
+                img.save(buf, format="JPEG", quality=90)
+                b64 = base64.b64encode(buf.getvalue()).decode()
+            except ImportError:
+                # Pillow not installed — send original
+                log.warning("Pillow not installed, sending original image size")
+                b64 = base64.b64encode(r.content).decode()
+            return f"data:image/jpeg;base64,{b64}"
         except Exception as e:
             log.warning(f"Could not fetch image {url}: {e}")
             return None
