@@ -246,12 +246,19 @@ def handle_verification(mb: MoltbookClient, llm: LocalLLM, resp: dict) -> bool:
         log.info("Solving verification challenge...")
         answer = solve_verification(llm, v["challenge_text"])
         log.info(f"Submitting answer: {answer}")
-        result = mb.verify(v["verification_code"], answer)
-        if result.get("success"):
-            log.info("Verification passed!")
-            return True
-        else:
-            log.warning(f"Verification failed: {result.get('error')}")
+        try:
+            result = mb.verify(v["verification_code"], answer)
+            if result.get("success"):
+                log.info("Verification passed!")
+                return True
+            else:
+                log.warning(f"Verification failed: {result.get('error')}")
+                return False
+        except requests.exceptions.HTTPError as e:
+            log.warning(f"Verification request failed: {e.response.status_code} - {e.response.text[:200]}")
+            return False
+        except Exception as e:
+            log.warning(f"Verification error: {e}")
             return False
     return True
 
