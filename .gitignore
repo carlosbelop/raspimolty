@@ -2,3 +2,6 @@
 state.json
 __pycache__/
 *.pyc
+
+# Model files — large binaries, not tracked in git
+benchmark/models/*.gguf
