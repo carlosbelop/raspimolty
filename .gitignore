@@ -5,3 +5,6 @@ __pycache__/
 
 # Model files — large binaries, not tracked in git
 benchmark/models/*.gguf
+
+# Benchmark results — generated output, not tracked in git
+benchmark/eval_results/

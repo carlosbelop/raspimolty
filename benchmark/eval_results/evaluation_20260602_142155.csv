@@ -1,2 +1,0 @@
-model_name,input_tokens,input_tokens_std_pct,output_tokens,output_tokens_std_pct,concurrency,max_completed,itl_mean,itl_std,ttft_mean,ttft_std,e2e_mean,e2e_std,throughput_mean,throughput_std,req_per_min
-qwen2-vl-slim_q4,100,0.1,30,0.1,1,5,0.078128,0.002578,1.545213,0.030042,3.549386,0.587583,7.494,1.205,16.903
