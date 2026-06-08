@@ -1,0 +1,211 @@
+# VLM Evaluation Configuration — Raspberry Pi 5
+#
+# Model : Qwen2-VL-2B-Instruct-Q4_K_M.gguf  (original model, Q4_K_M GGUF, CPU-only via llama-server)
+# Server: http://localhost:8080  (docker compose -f docker-compose-original.yml up -d)
+#
+# Same evaluation matrix as benchmark_config_rpi.yaml (compressed model) for direct comparison.
+
+evaluations:
+
+  # ── short prompt, short output (baseline) ─────────────────────────────────
+  - model:
+      name: "qwen2-vl-2b_q4km"
+      path: "/models/Qwen2-VL-2B-Instruct-Q4_K_M.gguf"
+    input_tokens: 100
+    input_tokens_std_pct: 0.1
+    output_tokens: 10
+    output_tokens_std_pct: 0.1
+    endpoint: "/v1/chat/completions"
+    seed: 42
+    concurrency_levels: [1]
+    requests_per_level: 5
+
+  # ── medium prompt, medium output ───────────────────────────────────────────
+  - model:
+      name: "qwen2-vl-2b_q4km"
+      path: "/models/Qwen2-VL-2B-Instruct-Q4_K_M.gguf"
+    input_tokens: 100
+    input_tokens_std_pct: 0.1
+    output_tokens: 50
+    output_tokens_std_pct: 0.1
+    endpoint: "/v1/chat/completions"
+    seed: 42
+    concurrency_levels: [1]
+    requests_per_level: 5
+
+  # ── long prompt, short output (prefill-heavy) ──────────────────────────────
+  - model:
+      name: "qwen2-vl-2b_q4km"
+      path: "/models/Qwen2-VL-2B-Instruct-Q4_K_M.gguf"
+    input_tokens: 100
+    input_tokens_std_pct: 0.1
+    output_tokens: 100
+    output_tokens_std_pct: 0.1
+    endpoint: "/v1/chat/completions"
+    seed: 42
+    concurrency_levels: [1]
+    requests_per_level: 3
+
+  # ── short prompt, long output (decode-heavy) ───────────────────────────────
+  - model:
+      name: "qwen2-vl-2b_q4km"
+      path: "/models/Qwen2-VL-2B-Instruct-Q4_K_M.gguf"
+    input_tokens: 100
+    input_tokens_std_pct: 0.1
+    output_tokens: 500
+    output_tokens_std_pct: 0.1
+    endpoint: "/v1/chat/completions"
+    seed: 42
+    concurrency_levels: [1]
+    requests_per_level: 3
+
+  # ── short prompt, long output (decode-heavy) ───────────────────────────────
+  - model:
+      name: "qwen2-vl-2b_q4km"
+      path: "/models/Qwen2-VL-2B-Instruct-Q4_K_M.gguf"
+    input_tokens: 100
+    input_tokens_std_pct: 0.1
+    output_tokens: 1000
+    output_tokens_std_pct: 0.1
+    endpoint: "/v1/chat/completions"
+    seed: 42
+    concurrency_levels: [1]
+    requests_per_level: 3
+
+  # ── short prompt, short output (baseline) ─────────────────────────────────
+  - model:
+      name: "qwen2-vl-2b_q4km"
+      path: "/models/Qwen2-VL-2B-Instruct-Q4_K_M.gguf"
+    input_tokens: 500
+    input_tokens_std_pct: 0.1
+    output_tokens: 10
+    output_tokens_std_pct: 0.1
+    endpoint: "/v1/chat/completions"
+    seed: 42
+    concurrency_levels: [1]
+    requests_per_level: 5
+
+  # ── medium prompt, medium output ───────────────────────────────────────────
+  - model:
+      name: "qwen2-vl-2b_q4km"
+      path: "/models/Qwen2-VL-2B-Instruct-Q4_K_M.gguf"
+    input_tokens: 500
+    input_tokens_std_pct: 0.1
+    output_tokens: 50
+    output_tokens_std_pct: 0.1
+    endpoint: "/v1/chat/completions"
+    seed: 42
+    concurrency_levels: [1]
+    requests_per_level: 5
+
+  # ── long prompt, short output (prefill-heavy) ──────────────────────────────
+  - model:
+      name: "qwen2-vl-2b_q4km"
+      path: "/models/Qwen2-VL-2B-Instruct-Q4_K_M.gguf"
+    input_tokens: 500
+    input_tokens_std_pct: 0.1
+    output_tokens: 100
+    output_tokens_std_pct: 0.1
+    endpoint: "/v1/chat/completions"
+    seed: 42
+    concurrency_levels: [1]
+    requests_per_level: 3
+
+  # ── short prompt, long output (decode-heavy) ───────────────────────────────
+  - model:
+      name: "qwen2-vl-2b_q4km"
+      path: "/models/Qwen2-VL-2B-Instruct-Q4_K_M.gguf"
+    input_tokens: 500
+    input_tokens_std_pct: 0.1
+    output_tokens: 500
+    output_tokens_std_pct: 0.1
+    endpoint: "/v1/chat/completions"
+    seed: 42
+    concurrency_levels: [1]
+    requests_per_level: 3
+
+  # ── short prompt, long output (decode-heavy) ───────────────────────────────
+  - model:
+      name: "qwen2-vl-2b_q4km"
+      path: "/models/Qwen2-VL-2B-Instruct-Q4_K_M.gguf"
+    input_tokens: 500
+    input_tokens_std_pct: 0.1
+    output_tokens: 1000
+    output_tokens_std_pct: 0.1
+    endpoint: "/v1/chat/completions"
+    seed: 42
+    concurrency_levels: [1]
+    requests_per_level: 3
+
+  # ── short prompt, short output (baseline) ─────────────────────────────────
+  - model:
+      name: "qwen2-vl-2b_q4km"
+      path: "/models/Qwen2-VL-2B-Instruct-Q4_K_M.gguf"
+    input_tokens: 1000
+    input_tokens_std_pct: 0.1
+    output_tokens: 10
+    output_tokens_std_pct: 0.1
+    endpoint: "/v1/chat/completions"
+    seed: 42
+    concurrency_levels: [1]
+    requests_per_level: 5
+
+  # ── medium prompt, medium output ───────────────────────────────────────────
+  - model:
+      name: "qwen2-vl-2b_q4km"
+      path: "/models/Qwen2-VL-2B-Instruct-Q4_K_M.gguf"
+    input_tokens: 1000
+    input_tokens_std_pct: 0.1
+    output_tokens: 50
+    output_tokens_std_pct: 0.1
+    endpoint: "/v1/chat/completions"
+    seed: 42
+    concurrency_levels: [1]
+    requests_per_level: 5
+
+  # ── long prompt, short output (prefill-heavy) ──────────────────────────────
+  - model:
+      name: "qwen2-vl-2b_q4km"
+      path: "/models/Qwen2-VL-2B-Instruct-Q4_K_M.gguf"
+    input_tokens: 1000
+    input_tokens_std_pct: 0.1
+    output_tokens: 100
+    output_tokens_std_pct: 0.1
+    endpoint: "/v1/chat/completions"
+    seed: 42
+    concurrency_levels: [1]
+    requests_per_level: 3
+
+  # ── short prompt, long output (decode-heavy) ───────────────────────────────
+  - model:
+      name: "qwen2-vl-2b_q4km"
+      path: "/models/Qwen2-VL-2B-Instruct-Q4_K_M.gguf"
+    input_tokens: 1000
+    input_tokens_std_pct: 0.1
+    output_tokens: 500
+    output_tokens_std_pct: 0.1
+    endpoint: "/v1/chat/completions"
+    seed: 42
+    concurrency_levels: [1]
+    requests_per_level: 3
+
+  # ── short prompt, long output (decode-heavy) ───────────────────────────────
+  - model:
+      name: "qwen2-vl-2b_q4km"
+      path: "/models/Qwen2-VL-2B-Instruct-Q4_K_M.gguf"
+    input_tokens: 1000
+    input_tokens_std_pct: 0.1
+    output_tokens: 1000
+    output_tokens_std_pct: 0.1
+    endpoint: "/v1/chat/completions"
+    seed: 42
+    concurrency_levels: [1]
+    requests_per_level: 3
+
+# ── global settings ────────────────────────────────────────────────────────────
+global:
+  server_host: "localhost"
+  server_port: 8080
+  results_base_dir: "./eval_results"
+  warmup_requests: 1
+  request_timeout: 600

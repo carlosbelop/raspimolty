@@ -1,0 +1,20 @@
+[
+  {
+    "model_name": "qwen2-vl-slim_q4",
+    "input_tokens": 100,
+    "input_tokens_std_pct": 0.1,
+    "output_tokens": 50,
+    "output_tokens_std_pct": 0.1,
+    "concurrency": 1,
+    "max_completed": 5,
+    "itl_mean": 0.068193,
+    "itl_std": 0.001982,
+    "ttft_mean": 1.455688,
+    "ttft_std": 0.046942,
+    "e2e_mean": 4.268812,
+    "e2e_std": 1.06031,
+    "throughput_mean": 9.979,
+    "throughput_std": 2.268,
+    "req_per_min": 14.055
+  }
+]

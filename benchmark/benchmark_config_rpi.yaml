@@ -1,0 +1,228 @@
+# VLM Evaluation Configuration — Raspberry Pi 5
+#
+# Model : qwen2-vl-slim_q4.gguf  (Q4 GGUF, CPU-only via llama-server)
+# Server: http://localhost:8080  (docker compose up -d)
+#
+# This config uses "evaluations" mode which produces one table row per
+# (model × concurrency) combination, matching the LaTeX evaluation table:
+#
+#   CONFIGURATION                          | PERFORMANCE METRICS
+#   Model | In | In σ% | Out | Out σ% | C | MaxReq
+#     | ITL μ | ITL σ | TTFT μ | TTFT σ | e2e μ | e2e σ | Thru μ | Thru σ | req/min
+#
+# Metrics:
+#   ITL   — inter-token latency  (s/token, decode phase only, excl. first token)
+#   TTFT  — time to first token  (s)
+#   e2e   — end-to-end latency   (s)
+#   Thru  — output throughput    (aggregate tok/s across concurrent workers)
+#   req/min — completed requests per minute
+#
+# RPi constraints:
+#   - CPU-only inference → concurrency=1 is the realistic operating point
+#   - Adjust requests_per_level to trade off run time vs statistical quality
+#   - Each request takes ~2–10 s depending on output length
+
+evaluations:
+
+  # ── short prompt, short output (baseline) ─────────────────────────────────
+  - model:
+      name: "qwen2-vl-slim_q4"
+      path: "/models/qwen2-vl-slim_q4.gguf"
+    input_tokens: 100
+    input_tokens_std_pct: 0.1
+    output_tokens: 10
+    output_tokens_std_pct: 0.1
+    endpoint: "/v1/chat/completions"
+    seed: 42
+    concurrency_levels: [1]
+    requests_per_level: 5
+
+  # ── medium prompt, medium output ───────────────────────────────────────────
+  - model:
+      name: "qwen2-vl-slim_q4"
+      path: "/models/qwen2-vl-slim_q4.gguf"
+    input_tokens: 100
+    input_tokens_std_pct: 0.1
+    output_tokens: 50
+    output_tokens_std_pct: 0.1
+    endpoint: "/v1/chat/completions"
+    seed: 42
+    concurrency_levels: [1]
+    requests_per_level: 5
+
+  # ── long prompt, short output (prefill-heavy) ──────────────────────────────
+  - model:
+      name: "qwen2-vl-slim_q4"
+      path: "/models/qwen2-vl-slim_q4.gguf"
+    input_tokens: 100
+    input_tokens_std_pct: 0.1
+    output_tokens: 100
+    output_tokens_std_pct: 0.1
+    endpoint: "/v1/chat/completions"
+    seed: 42
+    concurrency_levels: [1]
+    requests_per_level: 3
+
+  # ── short prompt, long output (decode-heavy) ───────────────────────────────
+  - model:
+      name: "qwen2-vl-slim_q4"
+      path: "/models/qwen2-vl-slim_q4.gguf"
+    input_tokens: 100
+    input_tokens_std_pct: 0.1
+    output_tokens: 500
+    output_tokens_std_pct: 0.1
+    endpoint: "/v1/chat/completions"
+    seed: 42
+    concurrency_levels: [1]
+    requests_per_level: 3
+
+  # ── short prompt, long output (decode-heavy) ───────────────────────────────
+  - model:
+      name: "qwen2-vl-slim_q4"
+      path: "/models/qwen2-vl-slim_q4.gguf"
+    input_tokens: 100
+    input_tokens_std_pct: 0.1
+    output_tokens: 1000
+    output_tokens_std_pct: 0.1
+    endpoint: "/v1/chat/completions"
+    seed: 42
+    concurrency_levels: [1]
+    requests_per_level: 3
+
+  # ── short prompt, short output (baseline) ─────────────────────────────────
+  - model:
+      name: "qwen2-vl-slim_q4"
+      path: "/models/qwen2-vl-slim_q4.gguf"
+    input_tokens: 500
+    input_tokens_std_pct: 0.1
+    output_tokens: 10
+    output_tokens_std_pct: 0.1
+    endpoint: "/v1/chat/completions"
+    seed: 42
+    concurrency_levels: [1]
+    requests_per_level: 5
+
+  # ── medium prompt, medium output ───────────────────────────────────────────
+  - model:
+      name: "qwen2-vl-slim_q4"
+      path: "/models/qwen2-vl-slim_q4.gguf"
+    input_tokens: 500
+    input_tokens_std_pct: 0.1
+    output_tokens: 50
+    output_tokens_std_pct: 0.1
+    endpoint: "/v1/chat/completions"
+    seed: 42
+    concurrency_levels: [1]
+    requests_per_level: 5
+
+  # ── long prompt, short output (prefill-heavy) ──────────────────────────────
+  - model:
+      name: "qwen2-vl-slim_q4"
+      path: "/models/qwen2-vl-slim_q4.gguf"
+    input_tokens: 500
+    input_tokens_std_pct: 0.1
+    output_tokens: 100
+    output_tokens_std_pct: 0.1
+    endpoint: "/v1/chat/completions"
+    seed: 42
+    concurrency_levels: [1]
+    requests_per_level: 3
+
+  # ── short prompt, long output (decode-heavy) ───────────────────────────────
+  - model:
+      name: "qwen2-vl-slim_q4"
+      path: "/models/qwen2-vl-slim_q4.gguf"
+    input_tokens: 500
+    input_tokens_std_pct: 0.1
+    output_tokens: 500
+    output_tokens_std_pct: 0.1
+    endpoint: "/v1/chat/completions"
+    seed: 42
+    concurrency_levels: [1]
+    requests_per_level: 3
+
+  # ── short prompt, long output (decode-heavy) ───────────────────────────────
+  - model:
+      name: "qwen2-vl-slim_q4"
+      path: "/models/qwen2-vl-slim_q4.gguf"
+    input_tokens: 500
+    input_tokens_std_pct: 0.1
+    output_tokens: 1000
+    output_tokens_std_pct: 0.1
+    endpoint: "/v1/chat/completions"
+    seed: 42
+    concurrency_levels: [1]
+    requests_per_level: 3
+
+  # ── short prompt, short output (baseline) ─────────────────────────────────
+  - model:
+      name: "qwen2-vl-slim_q4"
+      path: "/models/qwen2-vl-slim_q4.gguf"
+    input_tokens: 1000
+    input_tokens_std_pct: 0.1
+    output_tokens: 10
+    output_tokens_std_pct: 0.1
+    endpoint: "/v1/chat/completions"
+    seed: 42
+    concurrency_levels: [1]
+    requests_per_level: 5
+
+  # ── medium prompt, medium output ───────────────────────────────────────────
+  - model:
+      name: "qwen2-vl-slim_q4"
+      path: "/models/qwen2-vl-slim_q4.gguf"
+    input_tokens: 1000
+    input_tokens_std_pct: 0.1
+    output_tokens: 50
+    output_tokens_std_pct: 0.1
+    endpoint: "/v1/chat/completions"
+    seed: 42
+    concurrency_levels: [1]
+    requests_per_level: 5
+
+  # ── long prompt, short output (prefill-heavy) ──────────────────────────────
+  - model:
+      name: "qwen2-vl-slim_q4"
+      path: "/models/qwen2-vl-slim_q4.gguf"
+    input_tokens: 1000
+    input_tokens_std_pct: 0.1
+    output_tokens: 100
+    output_tokens_std_pct: 0.1
+    endpoint: "/v1/chat/completions"
+    seed: 42
+    concurrency_levels: [1]
+    requests_per_level: 3
+
+  # ── short prompt, long output (decode-heavy) ───────────────────────────────
+  - model:
+      name: "qwen2-vl-slim_q4"
+      path: "/models/qwen2-vl-slim_q4.gguf"
+    input_tokens: 1000
+    input_tokens_std_pct: 0.1
+    output_tokens: 500
+    output_tokens_std_pct: 0.1
+    endpoint: "/v1/chat/completions"
+    seed: 42
+    concurrency_levels: [1]
+    requests_per_level: 3
+
+  # ── short prompt, long output (decode-heavy) ───────────────────────────────
+  - model:
+      name: "qwen2-vl-slim_q4"
+      path: "/models/qwen2-vl-slim_q4.gguf"
+    input_tokens: 1000
+    input_tokens_std_pct: 0.1
+    output_tokens: 1000
+    output_tokens_std_pct: 0.1
+    endpoint: "/v1/chat/completions"
+    seed: 42
+    concurrency_levels: [1]
+    requests_per_level: 3
+
+# ── global settings ────────────────────────────────────────────────────────────
+global:
+  server_host: "localhost"
+  server_port: 8080
+  results_base_dir: "./eval_results"
+  warmup_requests: 1      # discarded warm-up requests before each level
+  request_timeout: 600    # seconds — RPi inference can be slow
