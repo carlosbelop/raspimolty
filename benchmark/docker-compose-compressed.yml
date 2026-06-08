@@ -1,0 +1,20 @@
+services:
+  backend:
+    container_name: benchmark-backend
+    platform: linux/arm64
+    image: registry.gitlab.com/multiverse1/resources/pre_sales/rpi-compactifai-demo/llamacpp-arm64:latest
+    environment:
+      - LLAMA_ARG_MODEL=/models/qwen2-vl-slim_q4.gguf
+      - LLAMA_ARG_MMPROJ=/models/mmproj-qwen2-vl-slim_q4.gguf
+      - LLAMA_ARG_HOST=0.0.0.0
+      - LLAMA_ARG_PORT=8080
+    volumes:
+      - ./models:/models:ro
+    ports:
+      - "8080:8080"
+    command: bash -c "./llama-server --ctx_size 4096 --batch-size 1024 --threads 4"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
